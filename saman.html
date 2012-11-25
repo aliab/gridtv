@@ -6,8 +6,10 @@
 	<style>
 		*{margin:0;padding: 0;outline: 0;}
 		.clearfix {min-width: 0;min-height: 0;width: 0;height: 0;display: block;float: none;clear: both;visibility: hidden;}
-		div.block {display:block;float:left;background:#f0f0f0;color:white;text-align:center;font-family:"Comic Sans MS";}
-		#tv{overflow:hidden;margin:50px auto 0 auto}
+		#tv{margin:20px 20px;}
+		.block {float:left;background:#f0f0f0;color:white;width:15px;height:15px;margin:1px 0 0 1px;}
+		.lr .block{margin-bottom:1px;}
+		.lc{margin-right:1px;}
 		.circle{width:100%;height:100%;background:rgba(220,220,220,0.8)}
 	</style>
 	<script src="jquery-1.8.3.js"></script>
@@ -61,7 +63,14 @@
 				}
 			}
 		];
-		GridTV.init({timing:400,container:'tv'}).addObjects(Objects).renderObjects().startTick(Frames, function() {});
+		var opts = {
+			container      : 'tv',
+			rows           : 30,
+			cols           : 50,
+			start          : 0,
+			timing         : 200
+		};
+		GridTV.init(opts).addObjects(Objects).renderObjects().startTick(Frames, function() {});
 	</script>
 </body>
 </html>

@@ -6,36 +6,80 @@
 */
 var GridTV = (function (jQ) {
 	var defOpts = {
-		container      : 'tv',           //default container
-		rows           : 11,            //# of blocks in rows
-		cols           : 17,            //# of blocks in cols
-		blkW           : 50,          //px
-		blkH           : 50,          //px
-		margin         : 2,            //default grid margin in px
-		blkClassPrefix : "block b",    //blocks class attribute prefix "can be used to specify more classes if useful ;)"
-		start          : 0,            //start frame
-		timing         : 3000          //default timing delay between frames in milliseconds
+		container      : 'tv',      //default container
+		rows           : 11,        //# of blocks in rows
+		cols           : 17,        //# of blocks in cols
+		blkClassPrefix : "block",   //blocks class attribute prefix "can be used to specify more classes if useful ;)" also use empty if not important
+		clearfixClass  : "clearfix",//clearfix class to be used, use empty if you dont want to be specified
+		firstRowClass  : "fr",
+		lastRowClass   : "lr",      //use empty if not important
+		firstColClass  : "fc",
+		lastColClass   : "lc",      //use empty if not important
+		colPrefix      : "c", //necessary
+		rowPrefix      : "r", //necessary
+		start          : 0,         //start frame
+		timing         : 3000       //default timing delay between frames in milliseconds
 	};
 	
-	var currentFrame = 0,
-	    framesLoaded = false,
-	    tickCallback,
+	var _currentFrame = 0,
+	    _framesLoaded = false,
+	    _tickCallback,
 	    _frames,
 	    _framesCount,
+	    _rowElem,
 	    _objs = {};
 
-	function showBlocks(r, c, W, H, m) { //rows,cols,width,height,margin of blocks
-		var str='',top,left;
-		for (var i = 1; i <= r; i++) {
-			str+='<div class="clearfix"></div>';
-			for (var j = 1; j <= c; j++) {
-				top = m + (i - 1) * (H + m);
-				left = m + (j - 1) * (W + m);
-				str+='<div style="margin:'+m+'px '+(j==c ? m+'px' : '0')+' '+(i==r ? m+'px' : '0')+' '+m+'px;width:'+W+'px;height:'+H+'px;" class="'+defOpts.blkClassPrefix+i+'-'+j+'"></div>';
-			};
+	function showBlocks() { //rows,cols,width,height,margin of blocks
+		var r=defOpts.rows, c=defOpts.cols ,W = defOpts.blkW, H = defOpts.blkH, m = defOpts.margin;
+		
+		/* Table based manipulation */
+		// var tv = document.getElementById(defOpts.container);
+		// var table = document.createElement('table');
+		// var row = document.createElement('tr');
+		// for (var i = 1; i <= c; i++) {
+		// 	var elem = document.createElement('td');
+		// 	elem.setAttribute('class', defOpts.blkClassPrefix+' '+defOpts.colPrefix+i+(i==1 ? ' '+defOpts.firstColClass : '')+(i==c ? ' '+defOpts.lastColClass : ''));
+		// 	row.appendChild(elem);
+		// };
+		// for (var i = 1; i <= r; i++) {
+		// 	row.setAttribute('class', 'r'+i);
+		// 	table.appendChild(row.cloneNode(true));
+		// };
+		// tv.appendChild(table);
+
+		/* DIV based manipulation */ /* Optimized version */
+		var tv = document.getElementById(defOpts.container);
+		var row = document.createElement('div');
+		for (var i = 1; i <= c; i++) {
+			var elem = document.createElement('div');
+			elem.setAttribute('class', defOpts.blkClassPrefix+' '+defOpts.colPrefix+i+(i==1 ? ' '+defOpts.firstColClass : '')+(i==c ? ' '+defOpts.lastColClass : ''));
+			row.appendChild(elem);
 		};
-		str+='<div class="clearfix"></div>';
-		jQ('#'+defOpts.container).append(str);
+		for (var i = 1; i <= r; i++) {
+			row.setAttribute('class', defOpts.rowPrefix+i+(i==1 ? ' '+defOpts.firstRowClass : '')+(i==r ? ' '+defOpts.lastRowClass : ''));
+			tv.appendChild(row.cloneNode(true));
+			clearFix();
+		};
+
+		/* straight forward division management */
+		// for (var i = 1; i <= r; i++) {
+		// 	for (var j = 1; j <= c; j++) {
+		// 		var elem = document.createElement('div');
+		// 		elem.setAttribute('class', defOpts.blkClassPrefix+' '+defOpts.rowPrefix+i+' '+defOpts.colPrefix+j+(j==1 ? ' '+defOpts.firstColClass : '')+(i==1 ? ' '+defOpts.firstRowClass : '')+(j==c ? ' '+defOpts.lastColClass : '')+(i==r ? ' '+defOpts.lastRowClass : ''));
+		// 		tv.appendChild(elem);
+		// 	};
+		// 	clearFix();
+		// };
+	}
+
+	/*
+	add a clearfix box to the tv
+	 */
+	function clearFix() {
+		if (defOpts.clearfixClass === '') return;
+		var elem = document.createElement('div');
+		elem.setAttribute('class', defOpts.clearfixClass);
+		document.getElementById(defOpts.container).appendChild(elem);
 	}
 
 	function mergeOptions(options) {
@@ -62,10 +106,7 @@ var GridTV = (function (jQ) {
 	return { 
 		init: function(options) {
 			mergeOptions(options);
-			var r = defOpts.rows, c = defOpts.cols, w = defOpts.blkW, h = defOpts.blkH, m = defOpts.margin;
-			showBlocks(r, c, w, h, m);
-			var mw = c*(w+m)+m;//container width
-			jQ('#'+defOpts.container).css('width',mw+'px');
+			showBlocks();
 			fixjQ();
 			return this;
 		},
@@ -126,23 +167,24 @@ var GridTV = (function (jQ) {
 		},
 
 		objLen: function(obj) {
-			//tanx to hashem
+			//tanx to Creative Qolami ;)
 			var i=0,k;
 			for(k in obj) i++;
 			return i;
 		},
 
 		startTick: function(frms, caTick) {
-			if (!framesLoaded) {
+			if (!_framesLoaded) {
 				_frames = frms;
-				tickCallback = caTick;
+				_tickCallback = caTick;
 				_framesCount = this.objLen(frms);
-				framesLoaded = true;
+				_framesLoaded = true;
+				if (_framesCount==0) return;
 			}
-			this.renderFrame(_frames[currentFrame]);
-			tickCallback(); //to be run as callback after each tick
-			var delay = _frames[currentFrame].time || defOpts.timing;
-			currentFrame = _frames[currentFrame].next || Math.floor((currentFrame + 1)%_framesCount) ; //circulated next frame
+			this.renderFrame(_frames[_currentFrame]);
+			_tickCallback(); //to be run as callback after each tick
+			var delay = _frames[_currentFrame].time || defOpts.timing;
+			_currentFrame = _frames[_currentFrame].next || Math.floor((_currentFrame + 1)%_framesCount) ; //circulated next frame
 			setTimeout(function(){this.GridTV.startTick()},delay);
 		},
 
